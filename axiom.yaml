@@ -1,0 +1,94 @@
+name: christiangeorgelucas/filetype-tools
+version: 0.1.0
+language: go
+description: >-
+  Composable Axiom file-type / MIME detection nodes wrapping h2non/filetype
+  (MIT, pure Go, zero dependencies) — identifies a file's canonical
+  extension, MIME type, and broad category (image/video/audio/font/archive/
+  document/application) from its leading magic bytes, tests a byte sample
+  against one expected type, checks category membership, and lists the
+  73 recognized types. Detection only, never processing — a natural
+  upstream router for format-specific packages like image-tools/pdf-tools/
+  office-tools. Offline, deterministic, stateless.
+nodes:
+    - name: DetectFileType
+      input: FileSample
+      output: FileTypeInfo
+      description: >-
+        Detect a file's type from the magic bytes at the start of a byte
+        sample. Returns the recognized canonical extension, MIME type, and
+        broad category (image/video/audio/font/archive/document/application),
+        or matched=false if the leading bytes do not match any of the 73
+        signatures this package recognizes (including an empty sample).
+    - name: MatchesType
+      input: MatchRequest
+      output: TypeMatch
+      description: >-
+        Test whether a byte sample's magic bytes match ONE specific expected
+        type, given as an extension (e.g. "png") or a MIME type (e.g.
+        "image/png"). Useful for validating "is this actually a PNG" without
+        caring what it is if not.
+    - name: IsTypeSupported
+      input: TypeIdentifier
+      output: FileTypeInfo
+      description: >-
+        Look up whether an extension or MIME type string is one this package
+        recognizes — a pure catalog lookup by name, no file bytes involved.
+        Returns the canonical TypeDescriptor (extension, mime_type, category)
+        when known, or matched=false when not.
+    - name: ListSupportedTypes
+      input: SupportedTypesQuery
+      output: SupportedTypesList
+      description: >-
+        List every file type this package can recognize (extension, MIME
+        type, and category), optionally filtered to one category. Useful for
+        discovering the detector's coverage before relying on it.
+    - name: IsImage
+      input: FileSample
+      output: TypeMatch
+      description: >-
+        Check whether a byte sample's magic bytes match any recognized image
+        format (JPEG, JPEG2000, PNG, GIF, WEBP, TIFF, BMP, HEIF, PSD, ICO,
+        Canon CR2 raw, DWG, and more).
+    - name: IsVideo
+      input: FileSample
+      output: TypeMatch
+      description: >-
+        Check whether a byte sample's magic bytes match any recognized video
+        format (MP4, MKV, WEBM, AVI, MOV/QuickTime, FLV, and more).
+    - name: IsAudio
+      input: FileSample
+      output: TypeMatch
+      description: >-
+        Check whether a byte sample's magic bytes match any recognized audio
+        format (MP3, WAV, FLAC, OGG, MIDI, AAC, and more).
+    - name: IsFont
+      input: FileSample
+      output: TypeMatch
+      description: >-
+        Check whether a byte sample's magic bytes match any recognized font
+        format (TTF, OTF, WOFF, WOFF2, EOT).
+    - name: IsArchive
+      input: FileSample
+      output: TypeMatch
+      description: >-
+        Check whether a byte sample's magic bytes match any recognized
+        archive/container/executable format (ZIP, TAR, GZIP, RAR, 7Z, PDF,
+        SQLite, ELF, Mach-O, ISO 9660, and more).
+    - name: IsDocument
+      input: FileSample
+      output: TypeMatch
+      description: >-
+        Check whether a byte sample's magic bytes match any recognized office
+        document format (legacy binary DOC/XLS/PPT, or OOXML DOCX/XLSX/PPTX).
+        Note: a legacy binary DOC/XLS/PPT sample shorter than 514 bytes is
+        detected only as "some OLE2 compound-file document" — the three
+        share an identical short header, and disambiguating which one
+        requires the discriminator bytes at offset 512-513.
+    - name: IsApplication
+      input: FileSample
+      output: TypeMatch
+      description: >-
+        Check whether a byte sample's magic bytes match any recognized
+        general application/binary format (WebAssembly WASM, Android
+        DEX/ODEX bytecode) not already covered by another category.

@@ -1,0 +1,102 @@
+// Data contracts for christiangeorgelucas/filetype-tools — stateless
+// file-type / MIME detection from magic bytes, wrapping the MIT-licensed
+// h2non/filetype Go library (zero dependencies, pure Go).
+//
+// This package IDENTIFIES a file's type from its leading bytes; it never
+// PROCESSES content (contrast image-tools/pdf-tools/office-tools, which
+// operate on a specific already-known format). It is a natural upstream
+// router for those packages: detect the type here, then hand the same
+// `data` bytes to the matching format-specific package.
+//
+// Detection only needs the file's header — callers should send at most the
+// first `maxInputBytes` (64 KiB, see nodes/helper.go) of a file; extra
+// bytes beyond that are ignored (truncated), not rejected, so it is always
+// safe to pass a whole small file or just a slice of a large one.
+
+syntax = "proto3";
+
+package christiangeorgelucas.filetype_tools;
+
+option go_package = ".;gen";
+
+// A chunk of file bytes to identify. Every detection node (DetectFileType,
+// the Is* category predicates) takes this as input. Only the leading bytes
+// matter — see the package-level comment above for the size note.
+message FileSample {
+  // Raw file bytes, leading header preferred (base64-encoded over the JSON
+  // bridge). Input beyond the first 64 KiB is ignored, not rejected.
+  bytes data = 1;
+}
+
+// One recognized file type: its canonical extension, MIME type, and broad
+// category. Used both as a detection result (embedded in FileTypeInfo) and
+// as a catalog entry (in SupportedTypesList).
+message TypeDescriptor {
+  // Canonical lowercase extension without a leading dot (e.g. "png", "pdf",
+  // "docx").
+  string extension = 1;
+  // Canonical MIME type (e.g. "image/png", "application/pdf").
+  string mime_type = 2;
+  // Broad category this type belongs to: one of "image", "video", "audio",
+  // "font", "archive", "document", "application".
+  string category = 3;
+}
+
+// The result of detecting a file's type from its magic bytes, or of
+// resolving whether an extension/MIME string is a known supported type.
+message FileTypeInfo {
+  // True when a type was recognized. When false, `type` is unset (all its
+  // fields are the zero value) — the input is either empty or does not
+  // match any of the 73 signatures this package recognizes.
+  bool matched = 1;
+  // The recognized type. Only meaningful when `matched` is true.
+  TypeDescriptor type = 2;
+}
+
+// The outcome of testing whether a byte sample matches ONE specific
+// expected type, or whether it belongs to one broad category.
+message TypeMatch {
+  // True when the sample's magic bytes match the requested type/category.
+  bool matches = 1;
+}
+
+// Input for MatchesType: test a byte sample against ONE specific expected
+// type, given as an extension OR a MIME type (supply exactly one — if both
+// are set, `extension` wins; if neither is set, the result is always false).
+message MatchRequest {
+  // Raw file bytes to test (base64-encoded over the JSON bridge). Only the
+  // leading header is needed; see the package-level comment for the size note.
+  bytes data = 1;
+  // Expected canonical extension, no leading dot (e.g. "png"). Case-insensitive.
+  string extension = 2;
+  // Expected MIME type (e.g. "image/png"). Case-insensitive. Ignored when
+  // `extension` is set.
+  string mime_type = 3;
+}
+
+// Input for IsTypeSupported: ask whether an extension or MIME string (no
+// file bytes involved — a pure catalog lookup) is one this package
+// recognizes. Supply exactly one of `extension`/`mime_type`.
+message TypeIdentifier {
+  // Extension to look up, no leading dot (e.g. "png"). Case-insensitive.
+  string extension = 1;
+  // MIME type to look up (e.g. "image/png"). Case-insensitive. Ignored when
+  // `extension` is set.
+  string mime_type = 2;
+}
+
+// Input for ListSupportedTypes: enumerate the catalog of every type this
+// package can recognize, optionally filtered to one category.
+message SupportedTypesQuery {
+  // Optional category filter: one of "image", "video", "audio", "font",
+  // "archive", "document", "application". Empty returns every category.
+  string category = 1;
+}
+
+// The full (or category-filtered) catalog of recognizable types.
+message SupportedTypesList {
+  // One entry per recognized type, in a stable deterministic order.
+  repeated TypeDescriptor types = 1;
+  // Total number of entries returned (== types length).
+  int32 count = 2;
+}
