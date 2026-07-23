@@ -1,6 +1,6 @@
 # filetype-tools
 
-Composable [Axiom](https://axiom.co) nodes for file-type / MIME detection from
+Composable [Axiom](https://axiomide.com) nodes for file-type / MIME detection from
 magic bytes. Wraps [h2non/filetype](https://github.com/h2non/filetype) (MIT,
 pure Go, zero dependencies) — a library that identifies a file's type by
 inspecting the leading bytes of its content, the same technique the Unix
