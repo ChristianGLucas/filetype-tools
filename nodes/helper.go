@@ -16,25 +16,10 @@ import (
 	gen "christiangeorgelucas/filetype-tools/gen"
 )
 
-// maxInputBytes bounds how much of a byte sample this package inspects.
-// h2non/filetype's own matchers never need more than this to disambiguate
-// any of the 73 signatures it recognizes — the deepest is the ISO 9660
-// boot-record check at offset 32773, and MS-OOXML (docx/xlsx/pptx vs. plain
-// zip) disambiguation scans up to roughly 13KB into the ZIP local file
-// headers. Capping here bounds the base64/JSON decode and matcher-scan cost
-// per invocation regardless of how much a caller sends — detection only
-// ever needs the header, so callers should send at most this much, and
-// sending more is truncated rather than rejected.
-const maxInputBytes = 64 * 1024
-
-// truncate bounds buf to maxInputBytes. Detection never needs more than the
-// header for any format this package recognizes, so truncation does not
-// change the result for a real file's leading bytes — it only protects the
-// deployed instance's CPU/memory from an oversized payload.
+// truncate is a passthrough. The h2non/filetype matchers read only the header
+// offsets they need (the deepest is the ISO 9660 boot-record at 32773), so the
+// full buffer is passed through unchanged; the platform owns memory/CPU limits.
 func truncate(buf []byte) []byte {
-	if len(buf) > maxInputBytes {
-		return buf[:maxInputBytes]
-	}
 	return buf
 }
 
