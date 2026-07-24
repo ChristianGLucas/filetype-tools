@@ -1,5 +1,6 @@
 name: christiangeorgelucas/filetype-tools
-version: 0.1.1language: go
+version: 0.1.1
+language: go
 description: >-
   Composable Axiom file-type / MIME detection nodes wrapping h2non/filetype
   (MIT, pure Go, zero dependencies) — identifies a file's canonical
